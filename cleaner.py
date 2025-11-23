@@ -7,7 +7,7 @@ def parse_reviews_by_llm(input):
     You are a professional data-cleaning assistant.
 
     Parse the following semi-structured game review text into a JSON array.
-    Each review follows the pattern: “quote” source (source may contain a score numbers like 9/10).
+    Each review follows the pattern: "quote" source (source may contain a score numbers like 9/10).
 
     Requirements:
     1. Output **pure standard JSON only**, no explanations, no markdown, no code blocks.
@@ -60,7 +60,7 @@ def llm_parse(prompt):
     ])
 
     raw = response["message"]["content"]
-    final_json = None
+    final_json = []
     try:
         final_json = json.loads(raw)
     except json.JSONDecodeError:
@@ -70,10 +70,54 @@ def llm_parse(prompt):
     return final_json
 
 
+def normalize_quotes(text: str) -> str:
+    """
+    convert all types of curly quotation marks into standard English quotation marks.
+    """
+    quote_map = {
+        '‘': "'",
+        '’': "'",
+        '“': '"',
+        '”': '"',
+        '´': "'",
+        '′': "'",
+        '‛': "'",
+        '″': '"',
+        '〝': '"',
+        '〞': '"',
+        '＇': "'",  
+        '＂': '"',
+        #'–': '-',
+    }
+
+    pattern = re.compile('|'.join(re.escape(k) for k in quote_map.keys()))
+    return pattern.sub(lambda m: quote_map[m.group()], text)
+
+
+
+def test():
+    review = """
+    “It’s like working at McDonalds in the middle of a tornado while demonic versions of Ronald McDonald and the Hamburglar try to sabotage your every move” The Game Center “You might have guessed from the grime that Cooking Mama this is not” PC Gamer “Happy’s Humble Burger Farm is a genius game” 9/10 - Superb – Destructoid
+    """
+
+    print(f"Start convert a review: {review}\n")
+    res = parse_reviews_by_llm(normalize_quotes(review))
+    print(f"The review is formatted as: \n{json.dumps(res)}\n")
+
+    print(f"Start convert a empty review")
+    res = parse_reviews_by_llm("")
+    print(f"The review is formatted as: {res}\n")
+
+    bad_review = "abcd"
+    print(f"Start convert a bad review: {bad_review}")
+    res = parse_reviews_by_llm(bad_review)
+    print(f"The review is formatted as: {res}\n")
+
 
 
 if __name__ == "__main__":
-    pass
+    
+    test()
     
     
 
